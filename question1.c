@@ -7,15 +7,32 @@
 
 pid_t pid;
 
+int childTerminated = 1;
+
+void ctrlZHandler(int num)
+{    
+    printf("hello");      
+    if (num == SIGCHLD)
+    {        
+        printf("hello1");
+        childTerminated = 1;
+        kill(pid, SIGCONT);        
+    }else{
+        printf("hello2");
+        childTerminated = 0;
+        kill(pid, SIGSTOP);        
+    }
+}
+
+
+
 void ctrlCHandler(int num){
     printf("\n heyyy \n");
     printf("%d", pid);
+    kill(pid, SIGKILL);
     //exit(0);
 }
 
-void ctrlZHandler(int num){
-    
-}
 
 void seghandler(int num){
     write(STDOUT_FILENO, "Seg Fault \n", 10);
@@ -23,7 +40,6 @@ void seghandler(int num){
 
 
 int main(int argc, char* argv[]){
-
     struct sigaction ctrlC;
     ctrlC.sa_handler = ctrlCHandler;
     sigaction(SIGINT, &ctrlC, NULL);    
@@ -41,14 +57,16 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    if (pid == 0){
-
-    }else{
-        // wait(NULL);
-        while(1){
+    if (pid == 0){ // Children     
+            
+        while(childTerminated){
             printf("wasted \n");
-            sleep(1);
+            sleep(1);            
         }
+
+    }else{ // Parent 
+        wait(NULL);
+        exit(0);
     }
 
     return 0;
